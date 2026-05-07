@@ -97,7 +97,8 @@
                                 <h5 class="card-title fs-4">${item.Name}</h5>
                                 <p class="text-black">${item.Origin}</p>
                                 <p style="color: #003060;">${item.Description}</p>
-                                <div class="d-flex justify-content-end align-items-center mt-3">
+                                <div class="d-flex justify-content-end align-items-baseline mt-3">
+                                    ${item.Status ? `<span class="text-danger fw-bold me-3">${item.Status}</span>` : ''}
                                     <span class="price-tag">NT$ ${item.Price} <small class="text-muted fw-normal" style="font-size: 0.7em;">/200g</small></span>
                                 </div>
                             </div>
