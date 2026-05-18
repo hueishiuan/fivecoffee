@@ -32,37 +32,89 @@
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .price-tag { color: #003060; font-weight: bold; font-size: 1.25rem; }
         .service-card { background-color: var(--wellness-green); }
+        
+        /* 隱藏輸入框預設的數字上下按鈕 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] { -moz-appearance: textfield; }
+        
+        /* 調整備註欄位提示文字 (Placeholder) 的灰色 */
+        #inputNote::placeholder {
+            color: #b0b0b0; /* 可依需求調整此色碼，例如：#999999 或 #cccccc */
+        }
     </style>
 </head>
 <body>
-
     <div class="hero-section text-center">
         <div>
             <h1 class="display-4 fw-bold">FiveCoffee</h1>
             <p class="lead">五杯咖啡，只想給你一杯好咖啡</p>
-        </div>
-        <div class="scroll-arrow">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M13.902.334a.5.5 0 0 1-.28.65l-2.254.902-.4 1.927c.376.095.715.215.972.367.228.135.56.396.56.82 0 .046-.004.09-.011.132l-.962 9.068a1.28 1.28 0 0 1-.524.93c-.488.34-1.494.87-3.01.87-1.516 0-2.522-.53-3.01-.87a1.28 1.28 0 0 1-.524-.93L3.51 5.132A.78.78 0 0 1 3.5 5c0-.424.332-.685.56-.82.262-.154.607-.276.99-.372C5.824 3.614 6.867 3.5 8 3.5c.712 0 1.389.045 1.985.127l.464-2.215a.5.5 0 0 1 .303-.356l2.5-1a.5.5 0 0 1 .65.278zM9.768 4.607A13.991 13.991 0 0 0 8 4.5c-1.076 0-2.005.11-2.56.224-.283.058-.5.114-.624.186-.114.068-.161.134-.175.17l.96 9.065c.013.12.084.227.182.296.262.183 1.12.659 2.217.659 1.098 0 1.956-.476 2.218-.659.097-.069.168-.176.181-.296l.96-9.065c-.014-.036-.061-.102-.175-.17-.124-.072-.34-.128-.623-.186a13.99 13.99 0 0 0-1.792-.117z"/>
-            </svg>
         </div>
     </div>
 
     <div class="container py-5">
         <h2 class="section-title">近期豆單</h2>
         <p class="text-center text-muted mb-4">精選新鮮烘焙，風味絕佳</p>
-        
-        <div class="row g-4 mb-5 " id="beanContainer">
-            <div class="text-center text-muted" id="loadingText">
-                載入豆單中...
-            </div>
+        <div class="row g-4 mb-5" id="beanContainer">
+            <div class="text-center text-muted" id="loadingText">載入豆單中...</div>
         </div>
     </div>
 
+    <button id="cartBtn" class="btn position-fixed bottom-0 end-0 m-4 rounded-circle shadow d-flex justify-content-center align-items-center" style="width: 65px; height: 65px; z-index: 1000; background-color: #003060; color: white;" onclick="openCartModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-cart3" viewBox="0 0 16 16">
+            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l.84 4.479 9.144-.459L13.89 4H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+        </svg>
+        <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+    </button>
+
+    <div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header text-white" style="background-color: #003060;">
+            <h5 class="modal-title">確認訂單</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="cartItemsList" class="mb-4"></div>
+            
+            <hr>
+            <h6 class="fw-bold mb-3">聯絡資訊</h6>
+            <form id="orderForm">
+              <div class="mb-3">
+                <label class="form-label">Name (訂購人姓名)</label>
+                <input type="text" class="form-control" id="inputBuyerName" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Phone (聯絡電話)</label>
+                <input type="tel" class="form-control" id="inputPhone" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Note (訂單備註 - 可選)</label>
+                <textarea class="form-control" id="inputNote" rows="2" placeholder="如有濾掛請註明、指定到貨時間或其他需求請皆填寫於此..."></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary" onclick="clearCart()">清空購物車</button>
+            <button type="button" class="btn text-white" style="background-color: #003060;" id="submitOrderBtn" onclick="submitOrder()">送出訂單</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // ！！！重要！！！
-        // 請將下方的網址替換成你的 Google 試算表「發布到網路」的 CSV 網址
         const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVApdQ5j79F_8KdIshNCqMnHuqWPA5I-IsXdWyR_FdFJRGCNmIJiUMvRSegTSRSlTcEchV40GwqKth/pub?output=csv";
+        
+        // ！！！請務必將下方的字串替換成你剛剛在 GAS 部署產生的 Web App URL ！！！
+        const apiEndpointUrl = "https://script.google.com/macros/s/AKfycbxybBj67UgMQTUE9DcyL8iIKjmmHB6myVig8zddK_GU32fyvkaPASIYStmjfonQR042/exec";
+
+        let cart = []; 
+        let orderModalInstance;
 
         document.addEventListener("DOMContentLoaded", fetchData);
 
@@ -71,12 +123,7 @@
                 download: true,
                 header: true,
                 complete: function(results) {
-                    const parsedData = results.data;
-                    renderCards(parsedData);
-                },
-                error: function(error) {
-                    console.error("Data fetch failed:", error);
-                    document.getElementById("beanContainer").innerHTML = "<p class='text-center text-danger'>無法載入豆單，請稍後再試。</p>";
+                    renderCards(results.data);
                 }
             });
         }
@@ -85,29 +132,224 @@
             const container = document.getElementById("beanContainer");
             let htmlOutput = "";
 
-            data.forEach(item => {
-                // 避開空白列
+            data.forEach((item, index) => {
                 if (!item.Name) return;
+
+                const stockQty = parseInt(item.Stock) || 0;
+                const isSoldOut = stockQty < 1 || item.Status === "售完";
+                
+                const qtyInputId = `qty-input-${index}`;
+                
+                let actionHtml = "";
+                if (isSoldOut) {
+                    actionHtml = `
+                        <button class="btn btn-light w-100 text-muted border" style="border-radius: 8px; background-color: #f8f9fa;" disabled>
+                            售完
+                        </button>`;
+                } else {
+                    actionHtml = `
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <small class="text-muted">剩餘 ${stockQty} 份</small>
+                            <div class="d-flex align-items-center">
+                                <small class="text-muted me-2">數量</small>
+                                <div class="input-group input-group-sm flex-nowrap" style="width: 105px;">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="updateQty('${qtyInputId}', -1, ${stockQty})" style="border-color: #dee2e6; color: #6c757d;">-</button>
+                                    <input type="number" id="${qtyInputId}" class="form-control text-center shadow-none px-1" 
+                                           value="1" min="1" max="${stockQty}" 
+                                           onchange="validateMinMax(this, ${stockQty})"
+                                           style="border-color: #dee2e6; background-color: #fff;">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="updateQty('${qtyInputId}', 1, ${stockQty})" style="border-color: #dee2e6; color: #6c757d;">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn w-100 text-white" 
+                                style="background-color: #003060; border-radius: 8px; transition: background-color 0.2s;"
+                                onmouseover="this.style.backgroundColor='#001f3f'" 
+                                onmouseout="this.style.backgroundColor='#003060'"
+                                onclick="addToCartFromCard('${item.Name}', ${item.Price}, '${qtyInputId}', ${stockQty})">
+                            加入購物車
+                        </button>`;
+                }
 
                 htmlOutput += `
                     <div class="col-md-4">
-                        <div class="card h-100 p-3">
-                            <div class="card-body">
-                                <span class="badge rounded-pill mb-3 px-3 py-2 fs-7 fw-normal text-white" style="background-color: #003060;">${item.RoastLevel}</span>
+                        <div class="card h-100 p-3 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <span class="badge rounded-pill mb-3 px-3 py-2 fs-7 fw-normal text-white align-self-start" style="background-color: #003060;">${item.RoastLevel}</span>
                                 <h5 class="card-title fs-4">${item.Name}</h5>
-                                <p class="text-black">${item.Origin}</p>
-                                <p style="color: #003060;">${item.Description}</p>
-                                <div class="d-flex justify-content-end align-items-baseline mt-3">
-                                    ${item.Status ? `<span class="text-danger fw-bold me-3">${item.Status}</span>` : ''}
-                                    <span class="price-tag">NT$ ${item.Price} <small class="text-muted fw-normal" style="font-size: 0.7em;">/200g</small></span>
+                                <p class="text-black mb-1">${item.Origin}</p>
+                                <p class="text-muted small flex-grow-1" style="color: #003060;">${item.Description}</p>
+                                <div class="mt-3 border-top pt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="price-tag">NT$ ${item.Price} <small class="text-muted fw-normal" style="font-size: 0.7em;">/200g 或 濾掛10包</small></span>
+                                        ${item.Status ? `<span class="text-danger fw-bold">${item.Status}</span>` : ''}
+                                    </div>
+                                    ${actionHtml}
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
             });
-
             container.innerHTML = htmlOutput;
+        }
+
+        function addToCartFromCard(itemName, itemPrice, inputId, maxStock) {
+            const qtyInput = document.getElementById(inputId);
+            const orderQty = parseInt(qtyInput.value);
+
+            if (isNaN(orderQty) || orderQty < 1) {
+                alert("請輸入有效的數量");
+                return;
+            }
+
+            let existingItem = cart.find(i => i.itemName === itemName);
+            let currentInCart = existingItem ? existingItem.quantity : 0;
+
+            if (currentInCart + orderQty > maxStock) {
+                alert(`庫存不足！您購物車已有 ${currentInCart} 份，剩餘庫存僅能再加入 ${maxStock - currentInCart} 份。`);
+                return;
+            }
+
+            if (existingItem) {
+                existingItem.quantity += orderQty;
+            } else {
+                cart.push({ itemName: itemName, price: parseInt(itemPrice), quantity: orderQty });
+            }
+
+            updateCartBadge();
+            alert(`已將 ${orderQty} 份 ${itemName} 加入購物車！`);
+            
+            qtyInput.value = 1;
+        }
+
+        function validateMinMax(input, max) {
+            let val = parseInt(input.value);
+            if (isNaN(val) || val < 1) input.value = 1;
+            else if (val > max) input.value = max;
+        }
+
+        // 處理正負按鈕的數值增減
+        function updateQty(inputId, delta, max) {
+            const input = document.getElementById(inputId);
+            let val = parseInt(input.value);
+            if (isNaN(val)) val = 1;
+            val += delta;
+            if (val < 1) val = 1;
+            if (val > max) val = max;
+            input.value = val;
+        }
+
+        function updateCartBadge() {
+            let totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById("cartBadge").innerText = totalQty;
+        }
+
+        function clearCart() {
+            cart = [];
+            updateCartBadge();
+            if(orderModalInstance) orderModalInstance.hide();
+            alert("購物車已清空");
+        }
+
+        function openCartModal() {
+            if (cart.length === 0) {
+                alert("您的購物車是空的喔！");
+                return;
+            }
+
+            let cartHtml = '<div class="table-responsive"><table class="table align-middle"><thead><tr><th>品項</th><th class="text-center">單價</th><th class="text-center">數量</th><th class="text-end">小計</th></tr></thead><tbody>';
+            let grandTotal = 0;
+            
+            cart.forEach((item) => {
+                let itemTotal = item.price * item.quantity;
+                grandTotal += itemTotal;
+                cartHtml += `
+                    <tr>
+                        <td><div class="fw-bold">${item.itemName}</div></td>
+                        <td class="text-center">NT$ ${item.price}</td>
+                        <td class="text-center">${item.quantity}</td>
+                        <td class="text-end fw-bold">NT$ ${itemTotal}</td>
+                    </tr>`;
+            });
+            
+            cartHtml += `
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-light">
+                            <td colspan="3" class="text-end fw-bold">總計 (Total)</td>
+                            <td class="text-end fw-bold text-primary" style="font-size: 1.2rem;">NT$ ${grandTotal}</td>
+                        </tr>
+                    </tfoot>
+                </table></div>`;
+
+            document.getElementById("cartItemsList").innerHTML = cartHtml;
+
+            if (!orderModalInstance) {
+                orderModalInstance = new bootstrap.Modal(document.getElementById('orderModal'));
+            }
+            orderModalInstance.show();
+        }
+
+        function submitOrder() {
+            const btn = document.getElementById("submitOrderBtn");
+            const buyerName = document.getElementById("inputBuyerName").value;
+            const phone = document.getElementById("inputPhone").value;
+            
+            // 加入防呆機制：如果找不到備註欄位，就預設為空字串，避免程式當機
+            const noteElement = document.getElementById("inputNote");
+            const note = noteElement ? noteElement.value : "";
+
+            if (!buyerName || !phone) {
+                alert("請填寫姓名與聯絡電話");
+                return;
+            }
+
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            const orderData = {
+                buyerName: buyerName,
+                phone: phone,
+                note: note,
+                cart: cart
+            };
+
+            // 在主控台印出資料，方便我們除錯
+            console.log("準備送出的訂單資料：", orderData);
+
+            fetch(apiEndpointUrl, {
+                method: "POST",
+                body: JSON.stringify(orderData)
+            })
+            .then(response => {
+                // 如果 Google 回傳的不是正常的狀態碼，主動拋出錯誤
+                if (!response.ok) {
+                    throw new Error("伺服器回應錯誤狀態碼: " + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === "success") {
+                    alert("訂單送出成功！");
+                    orderModalInstance.hide();
+                    document.getElementById("orderForm").reset();
+                    cart = []; 
+                    updateCartBadge();
+                    fetchData(); 
+                } else {
+                    alert("訂單送出失敗: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("發生連線錯誤:", error);
+                alert("伺服器沒有正確回應，請稍後再試。");
+            })
+            .finally(() => {
+                // 確保無論發生什麼事，按鈕都會恢復原狀
+                btn.innerText = "Submit Order";
+                btn.disabled = false;
+            });
         }
     </script>
 </body>
