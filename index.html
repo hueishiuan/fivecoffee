@@ -6,6 +6,8 @@
     <title>FiveCoffee</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- 加入 LINE LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         :root {
             --coffee-brown: #4e342e;
@@ -115,8 +117,42 @@
 
         let cart = []; 
         let orderModalInstance;
+        
+        // 宣告變數儲存客人的 LINE ID
+        let customerUserId = "";
 
-        document.addEventListener("DOMContentLoaded", fetchData);
+        // 網頁載入時，同時執行撈取豆單與 LIFF 初始化
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchData();
+            
+            // ！！！請將下方字串替換為你在 LINE Developers 後台取得的 LIFF ID ！！！
+            initializeLiff("2010813869-pr575tM8"); 
+        });
+
+        // LIFF 初始化函數
+        function initializeLiff(myLiffId) {
+            liff.init({
+                liffId: myLiffId
+            })
+            .then(() => {
+                if (liff.isLoggedIn()) {
+                    liff.getProfile()
+                        .then(profile => {
+                            customerUserId = profile.userId;
+                            console.log("成功抓取客人 LINE User ID: " + customerUserId);
+                        })
+                        .catch((err) => {
+                            console.error("抓取 Profile 失敗", err);
+                        });
+                } else {
+                    // 若未登入，強制跳轉至 LINE 登入畫面
+                    liff.login();
+                }
+            })
+            .catch((err) => {
+                console.error("LIFF 初始化失敗", err);
+            });
+        }
 
         function fetchData() {
             Papa.parse(sheetCsvUrl, {
@@ -229,7 +265,6 @@
             else if (val > max) input.value = max;
         }
 
-        // 處理正負按鈕的數值增減
         function updateQty(inputId, delta, max) {
             const input = document.getElementById(inputId);
             let val = parseInt(input.value);
@@ -296,7 +331,6 @@
             const buyerName = document.getElementById("inputBuyerName").value;
             const phone = document.getElementById("inputPhone").value;
             
-            // 加入防呆機制：如果找不到備註欄位，就預設為空字串，避免程式當機
             const noteElement = document.getElementById("inputNote");
             const note = noteElement ? noteElement.value : "";
 
@@ -312,10 +346,11 @@
                 buyerName: buyerName,
                 phone: phone,
                 note: note,
-                cart: cart
+                cart: cart,
+                // 加入抓取到的 LINE User ID 一起送出
+                lineUserId: customerUserId 
             };
 
-            // 在主控台印出資料，方便我們除錯
             console.log("準備送出的訂單資料：", orderData);
 
             fetch(apiEndpointUrl, {
@@ -323,7 +358,6 @@
                 body: JSON.stringify(orderData)
             })
             .then(response => {
-                // 如果 Google 回傳的不是正常的狀態碼，主動拋出錯誤
                 if (!response.ok) {
                     throw new Error("伺服器回應錯誤狀態碼: " + response.status);
                 }
@@ -346,8 +380,7 @@
                 alert("伺服器沒有正確回應，請稍後再試。");
             })
             .finally(() => {
-                // 確保無論發生什麼事，按鈕都會恢復原狀
-                btn.innerText = "Submit Order";
+                btn.innerText = "送出訂單";
                 btn.disabled = false;
             });
         }
